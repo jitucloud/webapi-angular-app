@@ -1,0 +1,231 @@
+﻿
+@model List<Weather.Online.Models.Country>
+@{
+    ViewBag.Title = "Weather Application";
+}
+
+<script>
+    var weatherApp = angular.module("weatherApp", []);
+
+    weatherApp.controller('weatherController', ["$scope", "countryService", "cityService", "weatherService", function ($scope, countryService, cityService, weatherService) {
+
+        $scope.citydropdownstate = true;
+        $scope.GetAllCountry = function () {
+            countryService.countryList().then(function (result) {
+                $scope.countries = result;
+                $scope.cities = [];
+            });
+        }
+
+        $scope.GetCityList = function () {
+            cityService.cityList($scope.country.CountryCode).then(function (result) {
+                if (result != null && result != "") {
+                    $scope.citydropdownstate = false;
+                }
+                $scope.cities = result.data;
+
+            });
+        }
+
+        $scope.GetWeatherInfo = function () {
+            var promise = weatherService.weatherInfo($scope.city.CityName.toLowerCase());
+            promise.then(function (weatherInfo) {
+                $scope.weatherInfo = weatherInfo;
+                },
+                function (error) {
+                    console.log('failure loading weatherInfo', errorPayload);
+                });
+        }
+    }]);
+
+    weatherApp.service("countryService", ["$q", "$http", "$location", function ($q, $http, $location) {
+
+        var deferred = $q.defer();
+
+        var countryListEndpoint = "http://localhost:51357/" + "api/weather/countries";
+
+        var _countryList = function () {
+
+            $http.get(countryListEndpoint).then(successCallback, errorCallback);
+
+            function successCallback(response) {
+                deferred.resolve(response.data);
+            }
+            function errorCallback(error) {
+                deferred.reject(error);
+            }
+            return deferred.promise;
+        };
+        return {
+            countryList: _countryList
+        };
+
+    }]);
+
+    weatherApp.service("cityService", ["$q", "$http", "$location", function ($q, $http, $location) {
+
+        var _cityList = function (countryCode) {
+            var cityListEndpoint = "http://localhost:51357/" + "api/weather/countries/" + countryCode;
+            return $http.get(cityListEndpoint);
+        };
+        return {
+            cityList: _cityList
+        };
+
+    }]);
+
+    weatherApp.service("weatherService", ["$http", "$location", function ($http, $location) {
+
+        var _weatherInfo = function (cityName) {
+
+            var weatherServiceEndpoint = "http://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&APPID=b2e42af0b760f54a33bab583e51b8641";
+
+            return $http.get(weatherServiceEndpoint)
+                .then(function (response) {
+                    return {
+                        data: response.data
+                    };
+                });
+        };
+        return { weatherInfo: _weatherInfo };
+    }]);
+
+</script>
+
+<h2>Welcome to Weather Application</h2>
+
+<div ng-app="weatherApp" ng-controller="weatherController" ng-init="GetAllCountry()">
+   
+    <!-- Country and City drop down section-->
+    <div class="well container">
+        <!-- Country Dropdown-->
+        <div class="row">
+            <div class="col-md-3">
+                <h4>Please choose a country</h4>
+            </div>
+            <div class="col-md-3 offset-md-6">
+                <select data-ng-options="country.CountryName for country in countries track by country.CountryCode"
+                        data-ng-model="country"
+                        data-ng-change="GetCityList()"
+                         >
+                    <option value="" disabled>--Select Country--</option>
+                </select>
+            </div>
+        </div>
+        <!-- Country Dropdown-->
+        <div class="row">
+            <div class="col-md-3">
+                <h4>Please choose a city</h4>
+            </div>
+            <div class="col-md-3 offset-md-6">
+                <select ng-disabled="citydropdownstate"
+                        data-ng-options="city.CityName for city in cities track by city.CityCode"
+                        data-ng-model="city"
+                        data-ng-change="GetWeatherInfo()">
+                    <option value="" disabled>-----Select City----</option>
+                </select>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Weather Info Section-->
+    <div class="well">
+        <div class="row">
+            <div class="col-md-4">
+                <h4>Location :</h4>
+            </div>
+            <div class="col-md-8">
+                <h4>{{weatherInfo.data.name}}</h4>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <h4>Time</h4>
+            </div>
+            <div class="col-md-8">
+                <h4>{{weatherInfo.data.visibility}}</h4>
+            </div>
+        </div>
+
+
+        <div class="row">
+            <div class="col-md-4">
+                <h4>Wind</h4>
+            </div>
+            <div class="col-md-8">
+                <h4>{{weatherInfo.data.wind.speed}}</h4>
+            </div>
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-4">
+                <h4>Visibility</h4>
+            </div>
+
+            <div class="col-md-8">
+                <h4>{{weatherInfo.data.visibility}}</h4>
+            </div>
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-4">
+                <h4>Sky conditions</h4>
+            </div>
+
+            <div class="col-md-8">
+                <h4>{{weatherInfo.data.weather[0].description}}</h4>
+            </div>
+
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-4">
+                <h4>Temperature</h4>
+            </div>
+
+            <div class="col-md-8">
+                <h4>{{weatherInfo.data.main.temp}}</h4>
+            </div>
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-4">
+                <h4>Dew Point</h4>
+            </div>
+
+
+            <div class="col-md-8">
+                <h4>??</h4>
+            </div>
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-4">
+                <h4>Relative Humidity</h4>
+            </div>
+            <div class="col-md-8">
+                <h4>{{weatherInfo.data.main.humidity}}</h4>
+            </div>
+
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <h4>Pressue</h4>
+            </div>
+
+            <div class="col-md-8">
+                <h4>{{weatherInfo.data.main.pressure}}</h4>
+            </div>
+        </div>
+
+
+    </div>
+</div>
