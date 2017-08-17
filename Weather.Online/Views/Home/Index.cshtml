@@ -42,7 +42,9 @@
 
         var deferred = $q.defer();
 
-        var countryListEndpoint = "http://localhost:51357/" + "api/weather/countries";
+        var domainURL = $location.protocol() + '://' + $location.host() + ':' + $location.port() + "/";
+        
+        var countryListEndpoint = domainURL + "api/weather/countries";
 
         var _countryList = function () {
 
@@ -65,7 +67,10 @@
     weatherApp.service("cityService", ["$q", "$http", "$location", function ($q, $http, $location) {
 
         var _cityList = function (countryCode) {
-            var cityListEndpoint = "http://localhost:51357/" + "api/weather/countries/" + countryCode;
+
+            var domainURL = $location.protocol() + '://' + $location.host() + ':' + $location.port() + "/";
+
+            var cityListEndpoint = domainURL + "api/weather/countries/" + countryCode;
             return $http.get(cityListEndpoint);
         };
         return {
